@@ -74,6 +74,7 @@ class AppConfig:
     device_location: str = "Recepcion"
     threshold: float = 0.65
     cooldown_seconds: int = 60
+    min_mark_interval_seconds: int = 3600
     camera_index: int = 0
     camera_sources: list[CameraSourceConfig] = field(default_factory=list)
     offline_mode: bool = False

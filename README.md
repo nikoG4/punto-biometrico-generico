@@ -9,6 +9,7 @@ Sistema offline-first de control de asistencia facial para mini PC, kiosco o ter
 - Seleccion de empleado desde una fuente externa generica.
 - Rostros pendientes de asociar cuando no se elige empleado.
 - Registro de marcaciones `IN` / `OUT` con cooldown anti-duplicado.
+- Intervalo minimo configurable entre marcaciones validas; por ejemplo, bloquear una nueva marca si paso menos de 1 hora.
 - Reconocimiento ArcFace/InsightFace con fallback demo.
 - FAISS si esta disponible, fallback NumPy.
 - Multicamara: webcams e IP/RTSP en paralelo.

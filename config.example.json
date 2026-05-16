@@ -3,6 +3,7 @@
   "device_location": "Recepcion",
   "threshold": 0.65,
   "cooldown_seconds": 60,
+  "min_mark_interval_seconds": 3600,
   "camera_index": 0,
   "camera_sources": [
     {

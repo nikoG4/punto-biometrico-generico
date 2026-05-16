@@ -112,6 +112,23 @@ class CoreServiceTests(unittest.TestCase):
         self.assertEqual(log.employee_id, employee.id)
         self.assertTrue(attendance.is_in_cooldown(employee.id))
 
+    def test_min_mark_interval_reports_remaining_time(self) -> None:
+        from datetime import datetime, timedelta
+
+        employees = EmployeeService(self.db)
+        attendance = AttendanceService(self.config, self.db)
+        employee = employees.create_employee("Intervalo Demo", "INT-1")
+        first_at = datetime(2026, 5, 16, 8, 0, 0)
+
+        attendance.mark(employee.id, AttendanceType.IN, confidence=0.95, at=first_at)
+        wait_time, last_mark_at = attendance.time_until_next_mark(employee.id, at=first_at + timedelta(minutes=30))
+        allowed_wait, _ = attendance.time_until_next_mark(employee.id, at=first_at + timedelta(hours=1, minutes=1))
+
+        self.assertEqual(last_mark_at, first_at)
+        self.assertIsNotNone(wait_time)
+        self.assertGreaterEqual(wait_time.total_seconds(), 1790)
+        self.assertIsNone(allowed_wait)
+
     def test_rrhh_service_lists_active_employees(self) -> None:
         rrhh_path = Path(self.temp_dir.name) / "rrhh.db"
         config = AppConfig(

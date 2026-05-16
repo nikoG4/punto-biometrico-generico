@@ -42,6 +42,26 @@ class AttendanceService:
             )
         return recent is not None
 
+    def time_until_next_mark(self, employee_id: int, at: datetime | None = None) -> tuple[timedelta | None, datetime | None]:
+        min_interval = max(0, int(self.config.min_mark_interval_seconds))
+        if min_interval <= 0:
+            return None, None
+        current = at or datetime.now()
+        with self.db.primary_session() as session:
+            last = session.scalar(
+                select(AttendanceLog)
+                .where(AttendanceLog.employee_id == employee_id)
+                .order_by(desc(AttendanceLog.timestamp))
+                .limit(1)
+            )
+        if last is None:
+            return None, None
+        elapsed = current - last.timestamp
+        required = timedelta(seconds=min_interval)
+        if elapsed >= required:
+            return None, last.timestamp
+        return required - elapsed, last.timestamp
+
     def mark(
         self,
         employee_id: int,

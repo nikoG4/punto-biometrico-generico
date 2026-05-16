@@ -155,6 +155,13 @@ class MainWindow(QMainWindow):
             self._sync_cached_faces()
             self.kiosk.set_ok("Rostro vinculado pendiente", "Actualizando datos desde RRHH")
             return
+        wait_time, last_mark_at = self.runtime.attendance.time_until_next_mark(match.employee_id)
+        if wait_time is not None:
+            self.kiosk.set_error(
+                "Ha pasado muy poco tiempo desde la ultima marca",
+                self._minimum_interval_detail(wait_time, last_mark_at),
+            )
+            return
         if self.runtime.attendance.is_in_cooldown(match.employee_id):
             self.kiosk.set_ok(f"{match.name}", "Marcacion reciente")
             return
@@ -173,6 +180,21 @@ class MainWindow(QMainWindow):
         if rrhh_detail:
             detail += f" - {rrhh_detail}"
         self.kiosk.set_ok(match.name, detail)
+
+    def _minimum_interval_detail(self, wait_time, last_mark_at: datetime | None) -> str:
+        wait_label = self._format_duration(wait_time.total_seconds())
+        if last_mark_at:
+            return f"Ultima marca: {last_mark_at.strftime('%H:%M:%S')}. Espere {wait_label}."
+        return f"Espere {wait_label} antes de volver a marcar."
+
+    def _format_duration(self, seconds: float) -> str:
+        total = max(0, int(seconds + 59) // 60)
+        hours, minutes = divmod(total, 60)
+        if hours and minutes:
+            return f"{hours} h {minutes} min"
+        if hours:
+            return f"{hours} h"
+        return f"{max(1, minutes)} min"
 
     def _save_snapshot(self, frame, employee_id: int, source_id: str) -> str:
         folder = Path(self.config.snapshot_dir)
@@ -321,12 +343,12 @@ class KioskPage(QWidget):
         self.status.setText(title)
         self.detail.setText(detail)
 
-    def set_error(self, message: str) -> None:
+    def set_error(self, message: str, detail: str = "Intente nuevamente") -> None:
         self.status.setObjectName("StatusError")
         self.status.style().unpolish(self.status)
         self.status.style().polish(self.status)
         self.status.setText(message)
-        self.detail.setText("Intente nuevamente")
+        self.detail.setText(detail)
 
     def set_camera_label(self, source_name: str, total_sources: int) -> None:
         if total_sources <= 1:
@@ -693,6 +715,10 @@ class SettingsPage(QWidget):
         self.threshold.setDecimals(2)
         self.cooldown = QSpinBox()
         self.cooldown.setRange(0, 3600)
+        self.min_mark_interval = QSpinBox()
+        self.min_mark_interval.setRange(0, 86400)
+        self.min_mark_interval.setSingleStep(300)
+        self.min_mark_interval.setSuffix(" s")
         self.camera_index = QSpinBox()
         self.camera_index.setRange(0, 10)
         self.camera_sources_json = QTextEdit()
@@ -714,6 +740,7 @@ class SettingsPage(QWidget):
         self.anti_spoof = QCheckBox("Requerir prueba de vida")
         form.addRow("Threshold", self.threshold)
         form.addRow("Cooldown segundos", self.cooldown)
+        form.addRow("Minimo entre marcas", self.min_mark_interval)
         form.addRow("Camara legacy", self.camera_index)
         form.addRow("Fuentes video", self.camera_sources_json)
         form.addRow("Modo integracion", self.integration_mode)
@@ -750,6 +777,7 @@ class SettingsPage(QWidget):
         config = self.window.config
         self.threshold.setValue(config.threshold)
         self.cooldown.setValue(config.cooldown_seconds)
+        self.min_mark_interval.setValue(config.min_mark_interval_seconds)
         self.camera_index.setValue(config.camera_index)
         self.camera_sources_json.setPlainText(
             json.dumps([self._camera_source_to_dict(source) for source in config.camera_sources], indent=2)
@@ -778,6 +806,7 @@ class SettingsPage(QWidget):
                 return
         config.threshold = self.threshold.value()
         config.cooldown_seconds = self.cooldown.value()
+        config.min_mark_interval_seconds = self.min_mark_interval.value()
         config.camera_index = self.camera_index.value()
         config.camera_sources = camera_sources
         config.integration_mode = str(self.integration_mode.currentData() or "sct")
@@ -793,6 +822,7 @@ class SettingsPage(QWidget):
             {
                 "threshold": config.threshold,
                 "cooldown_seconds": config.cooldown_seconds,
+                "min_mark_interval_seconds": config.min_mark_interval_seconds,
                 "camera_index": config.camera_index,
                 "camera_sources": [self._camera_source_to_dict(source) for source in config.camera_sources],
                 "integration_mode": config.integration_mode,
