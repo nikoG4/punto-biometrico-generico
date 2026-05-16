@@ -1,0 +1,6 @@
+# Recommended for production recognition.
+# On Windows/Python 3.12 these packages may require compatible wheels or build tools.
+# The app runs without them using its demo/fallback engine.
+insightface==0.7.3
+onnxruntime==1.18.1
+faiss-cpu==1.8.0.post1

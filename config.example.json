@@ -1,0 +1,62 @@
+{
+  "device_id": "DEVICE_001",
+  "device_location": "Recepcion",
+  "threshold": 0.65,
+  "cooldown_seconds": 60,
+  "camera_index": 0,
+  "camera_sources": [
+    {
+      "id": "FRONTAL",
+      "name": "Camara frontal",
+      "source": 0,
+      "enabled": true,
+      "width": 1280,
+      "height": 720,
+      "fps_limit": 30,
+      "primary": true
+    }
+  ],
+  "offline_mode": false,
+  "mysql_url": "mysql+pymysql://biometric_user:biometric_pass@127.0.0.1:3306/biometric_attendance",
+  "rrhh_mysql_url": "",
+  "rrhh_only_active": true,
+  "rrhh_attendance_user_id": null,
+  "integration_mode": "generic_db",
+  "generic_db": {
+    "url": "mysql+pymysql://usuario:password@127.0.0.1:3306/rrhh",
+    "employee_query": "SELECT id, code AS marker_code, name, COALESCE(status, '') AS status FROM employees WHERE (:query = '' OR name LIKE :query_like OR code LIKE :query_like) ORDER BY name LIMIT :limit",
+    "attendance_insert_sql": "INSERT INTO attendance_events (employee_code, timestamp, type, device_id, confidence) VALUES (:marker_code, :timestamp, :type, :device_id, :confidence)",
+    "biometric_faces_table": "biometric_faces"
+  },
+  "generic_rest": {
+    "base_url": "",
+    "token": "",
+    "employees_path": "/employees",
+    "biometric_faces_path": "/biometric-faces",
+    "attendance_path": "/attendance",
+    "timeout_seconds": 8
+  },
+  "sqlite_url": "sqlite:///local_cache.db",
+  "snapshot_dir": "snapshots",
+  "snapshot_retention_days": 30,
+  "snapshot_max_mb": 1024,
+  "admin_pin": "1234",
+  "recognition": {
+    "provider": "insightface",
+    "model_name": "buffalo_l",
+    "det_size": [640, 640],
+    "min_face_size": 40,
+    "process_every_n_frames": 3,
+    "anti_spoofing_required": false,
+    "blink_required": false,
+    "movement_required": false
+  },
+  "video_discovery": {
+    "enabled": true,
+    "subnet": "auto",
+    "ports": [554, 8554],
+    "timeout_ms": 350,
+    "max_workers": 64
+  },
+  "sound_enabled": true
+}

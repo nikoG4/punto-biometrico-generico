@@ -1,0 +1,7 @@
+PyQt6==6.7.1
+opencv-python==4.10.0.84
+numpy==1.26.4
+SQLAlchemy==2.0.32
+PyMySQL==1.1.1
+python-dotenv==1.0.1
+Pillow==10.4.0
